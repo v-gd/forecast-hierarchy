@@ -1,0 +1,119 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+  background: #f4f5f7;
+}
+
+.sandbox {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.sandbox-header {
+  margin-bottom: 20px;
+
+  h1 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #0d2e4e;
+    margin: 0;
+  }
+
+  p {
+    font-size: 13px;
+    color: #757575;
+    margin: 4px 0 0;
+
+    code, & {
+      font-family: 'Montserrat', sans-serif;
+    }
+  }
+}
+
+.component-section {
+  margin-bottom: 24px;
+  border: 1px solid #e3e3e3;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.editors {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.editor-panel {
+  border: 1px solid #e3e3e3;
+  border-radius: 8px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid #e7e7e7;
+
+  h2 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #757575;
+    margin: 0;
+  }
+}
+
+.apply-btn {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 14px;
+  border: 1px solid #004fd6;
+  border-radius: 4px;
+  background: #004fd6;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.12s;
+
+  &:hover {
+    background: #0042b5;
+    border-color: #0042b5;
+  }
+}
+
+.error-msg {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  color: #d2310d;
+  padding: 6px 14px;
+  background: rgba(210, 49, 13, 0.06);
+  border-bottom: 1px solid #e7e7e7;
+}
+
+.json-editor {
+  flex: 1;
+  min-height: 360px;
+  padding: 12px 14px;
+  border: none;
+  outline: none;
+  resize: vertical;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 12px;
+  line-height: 18px;
+  color: #181818;
+  background: #fafbfc;
+  tab-size: 2;
+
+  &:focus {
+    background: #fff;
+  }
+}
