@@ -23,16 +23,8 @@
             var shareScopes = (typeof __webpack_share_scopes__ !== "undefined")
                 ? __webpack_share_scopes__.default
                 : {};
-            window.forecast_hierarchy.init(shareScopes);
-            window.forecast_hierarchy.get("./RemoteEntry").then(function (factory) {
-                try { factory(); } catch(e) {
-                    /* Ignore "already been used with this registry" — element already defined */
-                    if (e.name !== "NotSupportedError") throw e;
-                }
-                console.log("Forecast hierarchy remote module initialized");
-            }).catch(function(e) {
-                console.warn("Forecast hierarchy remote init:", e);
-            });
+            try { window.forecast_hierarchy.init(shareScopes); } catch(e) { /* already initialized */ }
+            console.log("Forecast hierarchy remote module loaded");
         }
     };
     document.head.appendChild(script);
