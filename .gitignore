@@ -42,3 +42,8 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Creatio local deployment (large, not part of source)
+/creatio-pulled/
+/creatio-package/Files/src/js/forecast-hierarchy.js
+*.zip

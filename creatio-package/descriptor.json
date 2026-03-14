@@ -1,0 +1,10 @@
+{
+    "Descriptor": {
+        "UId": "313cf2a0-f63c-477e-a126-0847fd776753",
+        "PackageVersion": "1.0.0",
+        "Name": "ForecastHierarchy",
+        "ModifiedOnUtc": "/Date(1741996800000)/",
+        "Maintainer": "Creatio",
+        "DependsOn": []
+    }
+}

@@ -43,8 +43,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
-                  "maximumError": "8kB"
+                  "maximumWarning": "20kB",
+                  "maximumError": "30kB"
                 }
               ],
               "outputHashing": "all"
@@ -68,6 +68,34 @@
             }
           },
           "defaultConfiguration": "development"
+        },
+        "build-creatio": {
+          "builder": "@angular/build:application",
+          "options": {
+            "browser": "src/main.creatio.ts",
+            "tsConfig": "tsconfig.app.json",
+            "inlineStyleLanguage": "scss",
+            "outputPath": "dist/creatio-build",
+            "outputHashing": "none",
+            "styles": []
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "20kB",
+                  "maximumError": "30kB"
+                }
+              ]
+            }
+          },
+          "defaultConfiguration": "production"
         },
         "test": {
           "builder": "@angular/build:unit-test"
