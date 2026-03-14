@@ -1,0 +1,19 @@
+﻿{
+  "Descriptor": {
+    "UId": "7c6d206c-c085-4b03-8958-4345503b0309",
+    "PackageVersion": "7.8.0",
+    "Name": "UsrComponentPackage",
+    "Type": 1,
+    "ModifiedOnUtc": "\/Date(1773494864000)\/",
+    "Maintainer": "Customer",
+    "ProjectPath": "Files/UsrComponentPackage.csproj",
+    "Description": "#OriginalMaintainer:",
+    "DependsOn": [
+      {
+        "UId": "06d9ef10-51d8-122c-8933-9212e84236c9",
+        "PackageVersion": "7.8.0",
+        "Name": "CrtBase"
+      }
+    ]
+  }
+}

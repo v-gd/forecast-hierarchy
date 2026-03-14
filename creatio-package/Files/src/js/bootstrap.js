@@ -2,7 +2,7 @@
     require.config({
         paths: {
             "forecast-hierarchy": Terrasoft.getFileContentUrl(
-                "ForecastHierarchy",
+                "UsrComponentPackage",
                 "src/js/forecast-hierarchy.js"
             ),
         },

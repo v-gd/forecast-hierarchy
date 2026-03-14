@@ -47,3 +47,13 @@ Thumbs.db
 /creatio-pulled/
 /creatio-package/Files/src/js/forecast-hierarchy.js
 *.zip
+*.har
+
+# Creatio workspace
+/.clio/
+
+# Module Federation wrapper build artifacts
+/projects/forecast_hierarchy/node_modules/
+/projects/forecast_hierarchy/.angular/
+/packages/UsrComponentPackage/Files/src/js/forecast-hierarchy.js
+/packages/UsrComponentPackage/Files/src/js/forecast_hierarchy/

@@ -1,9 +1,19 @@
 /**
- * Creatio entry point — bootstraps the CrtModule for Freedom UI integration.
- * Used by the Creatio build configuration (angular.json "creatio" config).
+ * Creatio entry point — registers the custom element without bootstrapping a full Angular app.
+ * No root DOM element needed. The custom element is available once this script loads.
  */
-import { platformBrowser } from '@angular/platform-browser';
-import { CreatioModule } from './app/creatio.module';
+import { createApplication } from '@angular/platform-browser';
+import { createCustomElement } from '@angular/elements';
+import { provideZonelessChangeDetection } from '@angular/core';
+import { HierarchicalListComponent } from './app/components/hierarchical-list/hierarchical-list.component';
 
-platformBrowser().bootstrapModule(CreatioModule)
-  .catch((err) => console.error(err));
+createApplication({
+  providers: [provideZonelessChangeDetection()],
+})
+  .then((appRef) => {
+    const el = createCustomElement(HierarchicalListComponent, { injector: appRef.injector });
+    if (!customElements.get('forecast-hierarchy')) {
+      customElements.define('forecast-hierarchy', el);
+    }
+  })
+  .catch((err) => console.error('forecast-hierarchy init error:', err));

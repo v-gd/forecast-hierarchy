@@ -22,9 +22,19 @@ const OUTPUT_FILE = path.resolve(PACKAGE_JS_DIR, 'forecast-hierarchy.js');
   await fs.ensureDir(PACKAGE_JS_DIR);
 
   let content = await fs.readFile(mainJs, 'utf-8');
+  // Wrap as anonymous AMD module (RequireJS assigns the name from the path)
+  // and execute immediately to register the custom element
   content = `(function(){\n${content}\n})();\n`;
 
   await fs.writeFile(OUTPUT_FILE, content);
+
+  // Also copy to deployed Creatio content directory if it exists (Creatio doesn't follow symlinks)
+  const creatioContentDir = path.resolve(__dirname,
+    'creatio-pulled/creatio-local/conf/content/UsrComponentPackage/src/js');
+  if (await fs.pathExists(creatioContentDir)) {
+    await fs.copy(OUTPUT_FILE, path.join(creatioContentDir, 'forecast-hierarchy.js'));
+    console.log(`Copied to ${creatioContentDir}`);
+  }
 
   const size = (await fs.stat(OUTPUT_FILE)).size;
   console.log(`Created ${OUTPUT_FILE} (${(size / 1024).toFixed(1)} kB)`);

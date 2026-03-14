@@ -1,5 +1,4 @@
-import { Component, ViewEncapsulation, computed, input, signal, effect, OnDestroy, HostListener, ElementRef, inject, Input } from '@angular/core';
-import { CrtViewElement, CrtInput, CrtInterfaceDesignerItem } from '@creatio-devkit/common';
+import { Component, ViewEncapsulation, computed, input, signal, effect, OnDestroy, HostListener, ElementRef, inject } from '@angular/core';
 import {
   DataRecord, GenericColumnDef, HierarchyConfig, TreeNode, DEFAULT_HIERARCHY,
 } from '../../models/hierarchy.model';
@@ -320,20 +319,6 @@ function loadFromStorage<T>(key: string, fallback: T): T {
     .copy-toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--color-secondary); color: #fff; font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 500; padding: 8px 16px; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 100; pointer-events: none; animation: toast-fade 1.5s ease forwards; }
     @keyframes toast-fade { 0% { opacity: 0; transform: translateX(-50%) translateY(8px); } 15% { opacity: 1; transform: translateX(-50%) translateY(0); } 70% { opacity: 1; } 100% { opacity: 0; } }
   `]
-})
-@CrtViewElement({
-  selector: 'usr-forecast-hierarchy',
-  type: 'usr.ForecastHierarchy',
-})
-@CrtInterfaceDesignerItem({
-  toolbarConfig: {
-    caption: 'Forecast Hierarchy',
-    name: 'usr_forecast_hierarchy',
-    icon: `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="18" height="4" rx="1" fill="#004FD6" opacity="0.3"/><rect x="1" y="7" width="18" height="3" rx="1" fill="#004FD6"/><rect x="3" y="12" width="16" height="3" rx="1" fill="#004FD6" opacity="0.7"/><rect x="3" y="17" width="16" height="3" rx="1" fill="#004FD6" opacity="0.4"/></svg>`,
-    defaultPropertyValues: {
-      label: 'Forecast Hierarchy',
-    },
-  },
 })
 export class HierarchicalListComponent implements OnDestroy {
   readonly data = input<DataRecord[]>([]);
