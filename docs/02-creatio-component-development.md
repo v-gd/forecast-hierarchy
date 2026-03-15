@@ -234,7 +234,7 @@ After push, hard-refresh the Creatio page (Cmd+Shift+R). Open the Freedom UI Des
 
 ### Independent datasource
 
-Use an `embeddedModel` to create a datasource independent from the page's list. Without this, hiding a column in the list will affect your component's data:
+Use an `embeddedModel` to create a datasource completely independent from the page's list. Without this, hiding a column in the list will affect your component's data, and any list operations will interfere:
 
 ```javascript
 // In viewModelConfigDiff:
@@ -264,60 +264,11 @@ Use an `embeddedModel` to create a datasource independent from the page's list. 
 }
 ```
 
-### Handler pattern
-
-Three handlers work together to cover all data scenarios:
-
-```javascript
-handlers: [
-  // 1. React to data load (fires when Items populate)
-  {
-    request: "crt.HandleViewModelAttributeChangeRequest",
-    handler: async (request, next) => {
-      const result = await next?.handle(request);
-      if (request.attributeName !== "ComponentItems") return result;
-      try {
-        window._componentFeed?.(await request.$context.ComponentItems);
-      } catch (e) { console.error(e); }
-      return result;
-    }
-  },
-  // 2. Set up feed function + handle page re-entry (e.g., returning from edit page)
-  {
-    request: "crt.HandleViewModelInitRequest",
-    handler: async (request, next) => {
-      window._componentFeed = (items) => {
-        if (!items || !items.length) return;
-        const records = extractRecords(items);
-        const el = document.querySelector("usr-my-component");
-        if (el) el.data = records;
-      };
-      const result = await next?.handle(request);
-      setTimeout(async () => {
-        try { window._componentFeed?.(await request.$context.ComponentItems); }
-        catch (e) { }
-      }, 500);
-      return result;
-    }
-  },
-  // 3. Refresh button support
-  {
-    request: "crt.LoadDataRequest",
-    handler: async (request, next) => {
-      const result = await next?.handle(request);
-      setTimeout(async () => {
-        try { window._componentFeed?.(await request.$context.ComponentItems); }
-        catch (e) { }
-      }, 300);
-      return result;
-    }
-  }
-]
-```
+> **Do NOT use a page-level datasource** (`"scope": "page"`) for the component. Even with a different datasource name, if it points to the same entity with the same scope, Creatio may share the underlying data store. Always use `embeddedModel`.
 
 ### Reading Creatio item data
 
-Creatio wraps values in Zone.js proxies. Always read from `item.attributes` and unwrap:
+Creatio wraps attribute values in Zone.js proxies. Always read from `item.attributes` and unwrap:
 
 ```javascript
 const unwrap = (v) => (v != null && typeof v === "object"
@@ -335,6 +286,138 @@ for (let i = 0; i < items.length; i++) {
 ```
 
 **DO NOT** read `items[i].CDS_Name` directly — it returns a `{__zone_symbol__state, __zone_symbol__value}` proxy object, not the actual value.
+
+For lookup/reference fields (e.g., parent record), the unwrapped value is an object with `value` (the Id) and `displayValue`:
+```javascript
+const parentRef = unwrap(a.CDS_UsrParentRecord);
+const parentId = parentRef ? (parentRef.value || parentRef.Id || parentRef) : null;
+```
+
+### Handler pattern — complete working solution
+
+Four concerns must be handled for reliable data flow:
+
+1. **Initial data load** — when the page first opens
+2. **Data refresh** — when user clicks the refresh button
+3. **Page re-entry** — when user returns from the edit page (component DOM element is re-created)
+4. **Multiple attribute change events** — Creatio fires `HandleViewModelAttributeChangeRequest` multiple times; debounce to avoid redundant renders
+
+```javascript
+handlers: [
+  // 1. React to data load — debounced (fires multiple times)
+  {
+    request: "crt.HandleViewModelAttributeChangeRequest",
+    handler: async (request, next) => {
+      const result = await next?.handle(request);
+      if (request.attributeName !== "ComponentItems") return result;
+      clearTimeout(window._componentDebounce);
+      window._componentDebounce = setTimeout(async () => {
+        try {
+          window._componentFeed?.(await request.$context.ComponentItems);
+        } catch (e) { console.error("component:", e); }
+      }, 100);
+      return result;
+    }
+  },
+  // 2. Refresh button support
+  {
+    request: "crt.LoadDataRequest",
+    handler: async (request, next) => {
+      const result = await next?.handle(request);
+      setTimeout(async () => {
+        try {
+          window._componentFeed?.(await request.$context.ComponentItems);
+        } catch (e) { }
+      }, 300);
+      return result;
+    }
+  },
+  // 3. Setup + initial load + page re-entry via MutationObserver
+  {
+    request: "crt.HandleViewModelInitRequest",
+    handler: async (request, next) => {
+      const unwrap = (v) => (v != null && typeof v === "object"
+        && "__zone_symbol__value" in v) ? v.__zone_symbol__value : v;
+
+      const columns = [
+        // ... your column definitions
+      ];
+
+      // Feed function: extracts records from Creatio items and pushes to component
+      window._componentFeed = (items) => {
+        if (!items || !items.length) return;
+        const records = [];
+        for (let i = 0; i < items.length; i++) {
+          const a = items[i]?.attributes || {};
+          records.push({
+            id: String(unwrap(a.CDS_Id) || i),
+            name: String(unwrap(a.CDS_Name) || ""),
+            // ... map other fields
+          });
+        }
+        // Cache records for instant re-feed on page re-entry
+        window._componentCachedRecords = records;
+        const el = document.querySelector("usr-my-component");
+        if (!el) return;
+        el.columns = columns;
+        el.data = records;
+      };
+
+      // Feed component from cache (instant, no async)
+      const feedFromCache = () => {
+        if (!window._componentCachedRecords?.length) return;
+        const el = document.querySelector("usr-my-component");
+        if (!el || (el.data && el.data.length > 0)) return;
+        el.columns = columns;
+        el.data = window._componentCachedRecords;
+      };
+
+      // MutationObserver: detects when component element appears/re-appears in DOM
+      // This handles page re-entry (returning from edit page) — feeds instantly from cache
+      if (!window._componentObserver) {
+        window._componentObserver = new MutationObserver(feedFromCache);
+        window._componentObserver.observe(document.body, { childList: true, subtree: true });
+      }
+
+      // Store context for later use
+      window._componentContext = request.$context;
+
+      const result = await next?.handle(request);
+
+      // Initial load: retry until both element and data are available
+      const tryFeed = async (attempt) => {
+        try {
+          const items = await window._componentContext?.ComponentItems;
+          const el = document.querySelector("usr-my-component");
+          if (items && items.length > 0 && el) {
+            window._componentFeed?.(items);
+          } else if (attempt < 20) {
+            setTimeout(() => tryFeed(attempt + 1), 500);
+          }
+        } catch (e) {
+          if (attempt < 20) setTimeout(() => tryFeed(attempt + 1), 500);
+        }
+      };
+      setTimeout(() => tryFeed(0), 300);
+      return result;
+    }
+  }
+]
+```
+
+### Key data flow concepts
+
+**Why `MutationObserver` + cache is needed:**
+When the user opens an edit page and returns, Creatio destroys and re-creates the component's DOM element. None of the `crt.HandleViewModelInitRequest` or `crt.HandleViewModelAttributeChangeRequest` handlers fire again. The `MutationObserver` detects the new element and feeds it instantly from cached records — this makes the data appear without any visible delay, matching the UX of Creatio's built-in list component.
+
+**Why `embeddedModel` is needed:**
+A page-level datasource (`"scope": "page"`) is shared with other components. If the list hides a column, the datasource stops fetching that field, and your component loses that data too. An `embeddedModel` creates a completely independent datasource instance.
+
+**Why debouncing is needed:**
+`HandleViewModelAttributeChangeRequest` fires multiple times when data loads (once per attribute change batch). Without debouncing, your component renders 3-4 times in rapid succession. A 100ms debounce collapses these into a single render.
+
+**Why `HandleViewModelInitRequest` fires only once:**
+This handler runs when the page schema initializes — typically once per page navigation. It does NOT fire when returning from the edit page (Creatio re-uses the same page context). The `MutationObserver` + cache pattern handles this gap.
 
 ---
 
@@ -388,6 +471,11 @@ clio pkg-to-file-system -e creatio-local
 | SCSS nesting doesn't work | Inline styles + webpack | Use plain CSS selectors: `.parent .child {}` not `.parent { .child {} }` |
 | 404 for component JS | Wrong package name | `Terrasoft.getFileContentUrl()` first argument must match exact Creatio package name |
 | Data not showing | Reading proxy objects directly | Use `item.attributes.FIELD_NAME` and unwrap `__zone_symbol__value` |
-| Data disappears after closing edit page | `HandleViewModelAttributeChangeRequest` doesn't re-fire | Add `HandleViewModelInitRequest` handler with `setTimeout(500)` fallback |
+| Data not showing | Columns set after ngOnInit | Update `visibleColumns` in `ngOnChanges` when `columns` input changes |
+| Data disappears after closing edit page | Component DOM re-created but no handler fires | Use `MutationObserver` + cached records for instant re-feed |
+| Data appears with visible delay | Async fetch on re-entry | Cache records in `window._componentCachedRecords` and feed synchronously from `MutationObserver` |
+| Component renders 3-4 times on load | `HandleViewModelAttributeChangeRequest` fires multiple times | Debounce with `clearTimeout`/`setTimeout(100)` |
 | List and component interfere | Shared datasource instance | Use `embeddedModel` for independent datasource |
 | Changes not reflected after build | Stale content hashes | Always run `clio push-pkg` after deploying new files |
+| C# compilation errors in component package | Auto-generated `UsrComponentPackageApp.cs` has missing references | Replace file content with `namespace UsrComponentPackage { }` |
+| Demo license: "Cannot add more than 1000 records" | Softkey license table limit | Keep under 1000 records per table, or use full license |
